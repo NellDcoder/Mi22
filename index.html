@@ -29,7 +29,7 @@ body {
   width: 90%;
   max-width: 500px;
   padding: 20px;
-  border: 2px solid #3498db;
+  border: none; /* removed blue border */
   border-radius: 15px;
   box-shadow: 0 0 20px rgba(52,152,219,0.5);
   background: rgba(0,0,0,0.3);
@@ -50,9 +50,17 @@ button:hover {
   color: black;
 }
 .hidden { display: none; }
+
+.breadcrumb {
+  margin-bottom: 15px;
+  opacity: 0.8;
+  font-size: 14px;
+}
+
 .timer { font-size: 20px; margin-bottom:10px; }
 .blink { animation: blink 1s infinite; color:red; }
 @keyframes blink {50%{opacity:0.4;}}
+
 .question { font-size:18px; margin-bottom:20px; }
 .feedback { margin-top:10px; font-weight:bold; }
 </style>
@@ -60,7 +68,24 @@ button:hover {
 <body>
 <div class="blur-bg"></div>
 
-<div class="container" id="start-screen">
+<!-- ⭐ NEW START MENU -->
+<div class="container" id="menu-screen">
+  <h1>Puzzle Mini Games</h1>
+  <p class="breadcrumb">Home ➤ Start</p>
+  <button onclick="openGameSelect()">Start</button>
+</div>
+
+<!-- ⭐ Game Selection -->
+<div class="container hidden" id="game-select">
+  <h2>Select Game</h2>
+  <p class="breadcrumb">Home ➤ Start ➤ Game Select</p>
+
+  <button onclick="showQuiz()">Quiz Game</button>
+  <button onclick="alert('Coming soon!')">Another Game</button>
+</div>
+
+<!-- ⭐ ORIGINAL START SCREEN -->
+<div class="container hidden" id="start-screen">
   <h1>Guess the Hoyoverse</h1>
   <p><i>Test your knowledge across Genshin, Honkai, Star Rail, and ZZZ!</i></p>
   <p id="funfact">Fun Fact: [Add your fun fact here!]</p>
@@ -70,6 +95,7 @@ button:hover {
   <button onclick="startGame(questions.length)">All Questions</button>
 </div>
 
+<!-- QUIZ -->
 <div class="container hidden" id="quiz">
   <div class="timer" id="timer">30s</div>
   <div id="qCounter">Question 1/10</div>
@@ -79,6 +105,7 @@ button:hover {
   <div class="feedback" id="feedback"></div>
 </div>
 
+<!-- RESULT -->
 <div class="container hidden" id="result-screen">
   <h2>Results</h2>
   <p id="scoreText"></p>
@@ -86,6 +113,16 @@ button:hover {
 </div>
 
 <script>
+function openGameSelect(){
+  document.getElementById("menu-screen").classList.add("hidden");
+  document.getElementById("game-select").classList.remove("hidden");
+}
+
+function showQuiz(){
+  document.getElementById("game-select").classList.add("hidden");
+  document.getElementById("start-screen").classList.remove("hidden");
+}
+
 const funFacts = [
   "Fun Fact: You can see Celestia from Mondstadt’s highest point.",
   "Fun Fact: Seele from HI3 shares parallels with Seele in HSR.",
@@ -122,10 +159,16 @@ function loadQuestion(){
   const q=currentSet[currentQuestion];
   document.getElementById("question").textContent=q.question;
   document.getElementById("qCounter").textContent=`Question ${currentQuestion+1}/${selectedAmount}`;
-  const choicesDiv=document.getElementById("choices"); choicesDiv.innerHTML="";
+  const choicesDiv=document.getElementById("choices"); 
+  choicesDiv.innerHTML="";
   q.choices.forEach(c=>{
-    const btn=document.createElement("button"); btn.textContent=c;
-    btn.onclick=()=>{selectedAnswer=c; Array.from(choicesDiv.children).forEach(b=>b.style.background="green"); btn.style.background="lightblue";};
+    const btn=document.createElement("button"); 
+    btn.textContent=c;
+    btn.onclick=()=>{
+      selectedAnswer=c;
+      Array.from(choicesDiv.children).forEach(b=>b.style.background="green");
+      btn.style.background="lightblue";
+    };
     choicesDiv.appendChild(btn);
   });
   document.getElementById("feedback").textContent="";
@@ -136,23 +179,36 @@ function startTimer(){
   const timer=document.getElementById("timer");
   clearInterval(timerInterval);
   timerInterval=setInterval(()=>{
-    timeLeft--; timer.textContent=`${timeLeft}s`;
-    if(timeLeft<=10) timer.classList.add("blink"); else timer.classList.remove("blink");
-    if(timeLeft<=0){ clearInterval(timerInterval); submitAnswer(); }
+    timeLeft--; 
+    timer.textContent=`${timeLeft}s`;
+    if(timeLeft<=10) timer.classList.add("blink"); 
+    else timer.classList.remove("blink");
+    if(timeLeft<=0){ 
+      clearInterval(timerInterval); 
+      submitAnswer(); 
+    }
   },1000);
 }
 
 function submitAnswer(){
   const q=currentSet[currentQuestion];
   const feedback=document.getElementById("feedback");
-  if(selectedAnswer===q.answer){score++; feedback.textContent="✅ Correct!";}
-  else{feedback.textContent=`❌ Wrong! Correct answer is: ${q.answer}`;}
+  if(selectedAnswer===q.answer){
+    score++; 
+    feedback.textContent="✅ Correct!";
+  } else {
+    feedback.textContent=`❌ Wrong! Correct answer is: ${q.answer}`;
+  }
   clearInterval(timerInterval);
   setTimeout(()=>{
     currentQuestion++;
     selectedAnswer="";
-    if(currentQuestion<selectedAmount){ loadQuestion(); startTimer(); }
-    else{ endGame(); }
+    if(currentQuestion<selectedAmount){ 
+      loadQuestion(); 
+      startTimer(); 
+    } else { 
+      endGame(); 
+    }
   },1500);
 }
 
@@ -164,8 +220,10 @@ function endGame(){
 
 function shuffle(array){
   for(let i=array.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1)); [array[i],array[j]]=[array[j],array[i]];
-  } return array;
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  } 
+  return array;
 }
 </script>
 </body>
