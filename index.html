@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoyoverse Quiz</title>
+<style>
+body {
+  font-family: 'Poppins', sans-serif;
+  background: url('https://upload-os-bbs.hoyolab.com/upload/2020/07/14/1072831/0386851a028480eb95da974ccd2227ea_213412409097284740.png?x-oss-process=image%2Fresize%2Cs_1000%2Fauto-orient%2C0%2Finterlace%2C1%2Fformat%2Cwebp%2Fquality%2Cq_70') no-repeat center/cover;
+  height: 100vh;
+  margin: 0;
+  overflow: hidden;
+}
+.blur-bg {
+  backdrop-filter: blur(6px);
+  background-color: rgba(0,0,0,0.4);
+  position: absolute;
+  inset: 0;
+}
+.container {
+  position: relative;
+  z-index: 2;
+  color: white;
+  text-align: center;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  width: 90%;
+  max-width: 500px;
+  padding: 20px;
+  border: 2px solid #3498db;
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(52,152,219,0.5);
+  background: rgba(0,0,0,0.3);
+}
+button {
+  background: green;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  margin: 5px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 16px;
+}
+button:hover {
+  background: linear-gradient(to right, white, lightblue);
+  color: black;
+}
+.hidden { display: none; }
+.timer { font-size: 20px; margin-bottom:10px; }
+.blink { animation: blink 1s infinite; color:red; }
+@keyframes blink {50%{opacity:0.4;}}
+.question { font-size:18px; margin-bottom:20px; }
+.feedback { margin-top:10px; font-weight:bold; }
+</style>
+</head>
+<body>
+<div class="blur-bg"></div>
+
+<div class="container" id="start-screen">
+  <h1>Guess the Hoyoverse</h1>
+  <p><i>Test your knowledge across Genshin, Honkai, Star Rail, and ZZZ!</i></p>
+  <p id="funfact">Fun Fact: [Add your fun fact here!]</p>
+  <p>Select number of questions:</p>
+  <button onclick="startGame(5)">5 Questions</button>
+  <button onclick="startGame(10)">10 Questions</button>
+  <button onclick="startGame(questions.length)">All Questions</button>
+</div>
+
+<div class="container hidden" id="quiz">
+  <div class="timer" id="timer">30s</div>
+  <div id="qCounter">Question 1/10</div>
+  <div class="question" id="question"></div>
+  <div id="choices"></div>
+  <button id="submitBtn" onclick="submitAnswer()">Submit</button>
+  <div class="feedback" id="feedback"></div>
+</div>
+
+<div class="container hidden" id="result-screen">
+  <h2>Results</h2>
+  <p id="scoreText"></p>
+  <button onclick="location.reload()">Play Again</button>
+</div>
+
+<script>
+const funFacts = [
+  "Fun Fact: You can see Celestia from Mondstadt’s highest point.",
+  "Fun Fact: Seele from HI3 shares parallels with Seele in HSR.",
+  "Fun Fact: ZZZ’s Hollow devices are powered by Ether.",
+  "Fun Fact: Paimon was first teased before Genshin’s launch!"
+];
+document.getElementById("funfact").innerText = funFacts[Math.floor(Math.random()*funFacts.length)];
+
+const questions = [
+  {question:"What is the name of the floating city above Teyvat?",choices:["Celestia","Khaenri'ah","Mondstadt","Liyue Harbor"],answer:"Celestia"},
+  {question:"Who wields the Herrscher of Reason core in Honkai Impact?",choices:["Bronya Zaychik","Kiana Kaslana","Raiden Mei","Seele Vollerei"],answer:"Bronya Zaychik"},
+  {question:"In Honkai: Star Rail, what is the Astral Express?",choices:["A space train","A starship","A dimension gate","A relic"],answer:"A space train"},
+  {question:"What is the organization in Zenless Zone Zero that manages the Hollows?",choices:["Cunning Hares","New Eridu Management","Hollow Commission","Belobog Watchers"],answer:"Hollow Commission"},
+  {question:"Which Archon presides over Liyue?",choices:["Zhongli","Venti","Ei","Nahida"],answer:"Zhongli"},
+  {question:"What’s Raiden Mei’s Herrscher title in Honkai Impact 3rd?",choices:["Herrscher of Thunder","Herrscher of Flamescion","Herrscher of the Void","Herrscher of Rebirth"],answer:"Herrscher of Thunder"},
+  {question:"What is the Stellarion Hunters’ goal in Honkai: Star Rail?",choices:["Destroy the Aeons","Collect Stellaron","Erase Mara","Save the Astral Express"],answer:"Collect Stellaron"},
+  {question:"Which Zenless Zone Zero agent is part of the Cunning Hares?",choices:["Anby","Lycaon","Koleda","Soukaku"],answer:"Anby"},
+  {question:"In Genshin Impact, who founded the Knights of Favonius?",choices:["Vennessa","Jean","Diluc","Eula"],answer:"Vennessa"},
+  {question:"What is the name of the Honkai Impact universe’s main threat?",choices:["The Honkai","The Abyss","Entropy","Mara"],answer:"The Honkai"}
+];
+
+let currentQuestion = 0, score = 0, selectedAnswer = "", timerInterval, timeLeft = 30, selectedAmount = 10, currentSet = [];
+
+function startGame(amount){
+  selectedAmount=amount;
+  document.getElementById("start-screen").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  currentSet=shuffle([...questions]).slice(0,amount);
+  currentQuestion=0; score=0;
+  loadQuestion(); startTimer();
+}
+
+function loadQuestion(){
+  const q=currentSet[currentQuestion];
+  document.getElementById("question").textContent=q.question;
+  document.getElementById("qCounter").textContent=`Question ${currentQuestion+1}/${selectedAmount}`;
+  const choicesDiv=document.getElementById("choices"); choicesDiv.innerHTML="";
+  q.choices.forEach(c=>{
+    const btn=document.createElement("button"); btn.textContent=c;
+    btn.onclick=()=>{selectedAnswer=c; Array.from(choicesDiv.children).forEach(b=>b.style.background="green"); btn.style.background="lightblue";};
+    choicesDiv.appendChild(btn);
+  });
+  document.getElementById("feedback").textContent="";
+}
+
+function startTimer(){
+  timeLeft=30;
+  const timer=document.getElementById("timer");
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    timeLeft--; timer.textContent=`${timeLeft}s`;
+    if(timeLeft<=10) timer.classList.add("blink"); else timer.classList.remove("blink");
+    if(timeLeft<=0){ clearInterval(timerInterval); submitAnswer(); }
+  },1000);
+}
+
+function submitAnswer(){
+  const q=currentSet[currentQuestion];
+  const feedback=document.getElementById("feedback");
+  if(selectedAnswer===q.answer){score++; feedback.textContent="✅ Correct!";}
+  else{feedback.textContent=`❌ Wrong! Correct answer is: ${q.answer}`;}
+  clearInterval(timerInterval);
+  setTimeout(()=>{
+    currentQuestion++;
+    selectedAnswer="";
+    if(currentQuestion<selectedAmount){ loadQuestion(); startTimer(); }
+    else{ endGame(); }
+  },1500);
+}
+
+function endGame(){
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("result-screen").classList.remove("hidden");
+  document.getElementById("scoreText").textContent=`You got ${score}/${selectedAmount} correct!`;
+}
+
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1)); [array[i],array[j]]=[array[j],array[i]];
+  } return array;
+}
+</script>
+</body>
+</html>
